@@ -26,7 +26,7 @@ def continuous():
             plt.plot([y[0]-1,y[0]],[(train_data[j,23]),(train_data[j+1,0])], color=c)
         except IndexError:
             break
-     plt.show()
+    plt.show()
 
 
 def mean():

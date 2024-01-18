@@ -37,13 +37,13 @@ def create_nn_model():
 
 # Train the neural network models
 nn_model1 = create_nn_model()
-nn_model1.fit(X_train_nn, y_train1_nn, epochs=50, batch_size=32, validation_split=0.1, verbose=1)
+nn_model1.fit(X_train_nn, y_train1_nn, epochs=5, batch_size=32, validation_split=0.1, verbose=1)
 
 nn_model2 = create_nn_model()
-nn_model2.fit(X_train_nn, y_train2_nn, epochs=50, batch_size=32, validation_split=0.1, verbose=1)
+nn_model2.fit(X_train_nn, y_train2_nn, epochs=5, batch_size=32, validation_split=0.1, verbose=1)
 
 nn_model3 = create_nn_model()
-nn_model3.fit(X_train_nn, y_train3_nn, epochs=50, batch_size=32, validation_split=0.1, verbose=1)
+nn_model3.fit(X_train_nn, y_train3_nn, epochs=5, batch_size=32, validation_split=0.1, verbose=1)
 
 # Load your test data
 # Replace 'your_test_data.csv' with the actual file path
@@ -58,7 +58,7 @@ y_test3 = df['PowerConsumption_Zone3']
 
 # Standardize the test data
 scaler = StandardScaler()
-X_test_scaled = scaler.transform(test_data)
+X_test_scaled = scaler.fit_transform(test_data[numerical_cols])
 
 # Make predictions using the neural network models
 pred_nn1 = nn_model1.predict(X_test_scaled)
@@ -70,7 +70,7 @@ df_preds_nn = pd.DataFrame({'predicted_Zone1': pred_nn1.flatten(), 'predicted_Zo
 
 # Load your sample data
 # Replace 'your_sample_data.csv' with the actual file path
-sample = pd.read_csv('your_sample_data.csv')
+sample = pd.read_csv('Tetuan\sample_data.csv')
 
 # Get the datetime column from the sample DataFrame
 datetime_col = sample['Datetime']
