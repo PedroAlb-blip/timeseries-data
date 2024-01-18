@@ -6,7 +6,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 # Load your data
-df = pd.read_csv(r'C:\Users\admin\OneDrive\Documents\CSS 5. Semester\KddM2\Projekt\Tetuan\train_data.csv')
+df = pd.read_csv(r'Tetuan/train_data.csv')
 
 # Split the data into input features and target variable
 X_train = df.drop(['PowerConsumption_Zone1', 'PowerConsumption_Zone2', 'PowerConsumption_Zone3'], axis=1)
@@ -47,7 +47,7 @@ nn_model3.fit(X_train_nn, y_train3_nn, epochs=50, batch_size=32, validation_spli
 
 # Load your test data
 # Replace 'your_test_data.csv' with the actual file path
-test_data = pd.read_csv(r'C:\Users\admin\OneDrive\Documents\CSS 5. Semester\KddM2\Projekt\Tetuan\test_data.csv')
+test_data = pd.read_csv(r'Tetuan/test_data.csv')
 
 # Preprocess the test data (similar to training data preprocessing)
 X_test = df.drop(['PowerConsumption_Zone1', 'PowerConsumption_Zone2', 'PowerConsumption_Zone3'], axis=1)
