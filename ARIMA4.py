@@ -83,16 +83,19 @@ def arima_model(plot_df, zone):
     # plt.show()
 
     # Forecast
-    future = pd.DataFrame(index=pd.date_range(plot_df[f'PowerConsumption_{zone}'].index[-1] + pd.Timedelta(minutes=10), periods=60, freq='10T'))
+    future = pd.DataFrame(index=pd.date_range(plot_df.index[-1] + pd.Timedelta(minutes=10), periods=3000, freq='10T'))
     future['Temperature'] = 12
 
-    forecast = fit.get_forecast(steps=60, exog=future)
+    forecast = fit.get_forecast(steps=3000, exog=future)
     forecast_df = forecast.summary_frame()
 
     # Calculate RMSE
-    actual_values = plot_df[f'PowerConsumption_{zone}'].iloc[-60:]
-    rmse_value = rmse(forecast_df['mean'], actual_values)
-    print(f'RMSE for {zone}: {rmse_value}')
+    try:
+        actual_values_last_30 = plot_df[f'PowerConsumption_{zone}'].iloc[-3000:]
+        rmse_value_last_30 = rmse(forecast_df['mean'], actual_values_last_30)
+        print(f'RMSE for {zone}: {rmse_value_last_30}')
+    except ValueError:
+        print("fin")
 
     # Plot results
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=[f'Electricity Demand vs Temperature: {zone}', f'Forecasting electricity demand: {zone}'])
