@@ -74,8 +74,8 @@ def visualize_power_usage_by_zone(consumption):
     #     consumption.boxplot(column=f'PowerConsumption_{zone}',by='Day_number',ax=axes[i])
 def arima_model(plot_df, zone):
     # Fit ARIMA model
-    model = SARIMAX(plot_df[f'PowerConsumption_{zone}'], order=(1, 0, 0))
-    fit = model.fit(disp=False)
+    model = SARIMAX(plot_df[f'PowerConsumption_{zone}'], order=(3,0,0), seasonal_order=(3,0,0,5))
+    fit = model.fit(disp=True)
 
     # Plot residual diagnostics
     fig = fit.plot_diagnostics(figsize=(15, 5))
@@ -83,20 +83,20 @@ def arima_model(plot_df, zone):
     # plt.show()
 
     # Forecast
-    future = pd.DataFrame(index=pd.date_range(plot_df.index[-1] + pd.Timedelta(minutes=10), periods=30000, freq='10T'))
-    future['Temperature'] = [(12+(i/12000)) for i in range(0,30000)] #*(1+np.sin(i/72)) 
-    print(future['Temperature'])
+    future = pd.DataFrame(index=pd.date_range(plot_df.index[-1] + pd.Timedelta(minutes=10), periods=15000, freq='10T'))
+    future['Temperature'] = [(12+(i/12000))*(1.5+np.sin(i/72)) for i in range(0,15000)] #*(1+np.sin(i/72)) 
     # future['Humidity'] = [35*(2-np.sin(i)) for i in range(0,30000)]
     # future['Windspeed'] = [0.05*(2-np.sin(i)) for i in range(0,30000)]
     # future['GeneralDiffuseFlows'] = [0.05*(2-np.sin(i)) for i in range(0,30000)]
     # future["DiffuseFlows"] = [0.1*(2-np.sin(i)) for i in range(0,30000)]
 
-    forecast = fit.get_forecast(steps=30000, exog=future)
+    forecast = fit.get_forecast(steps=15000, exog=future)
+    print(forecast.summary_frame())
     forecast_df = forecast.summary_frame()
 
     # Calculate RMSE
     try:
-        actual_values_last_30 = plot_df[f'PowerConsumption_{zone}'].iloc[-30000:]
+        actual_values_last_30 = plot_df[f'PowerConsumption_{zone}'].iloc[-15000:]
         rmse_value_last_30 = rmse(forecast_df['mean'], actual_values_last_30)
         print(f'RMSE for {zone}: {rmse_value_last_30}')
     except ValueError:
