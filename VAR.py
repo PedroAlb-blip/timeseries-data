@@ -47,11 +47,12 @@ for col in columns_to_plot:
 
     # Drop NaN values
     data_to_plot = data[col].dropna()
+    plt.ylim(0, 100000)
 
     # Plotting
-    #data_to_plot.plot()
-    #plt.savefig(f'dataplots/{col}_rolling_avg.png')
-    #plt.close()
+    data_to_plot.plot()
+    plt.savefig(f'dataplots/{col}_rolling_avg.png')
+    plt.close()
 
 
 
@@ -85,10 +86,32 @@ for i in [1,2,3,4,5,6,7,8,9,10,20,30]:
     print('FPE : ', result.fpe)
     print('HQIC: ', result.hqic, '\n')
 '''
-grangers_test(data, 9)
+#grangers_test(data, 9)
 try:
     model = VAR(endog=train)
-    model_fit = model.fit(maxlags=9)  # You can adjust the number of lags
+    model_fit = model.fit(maxlags=5)  # You can adjust the number of lags
     # Rest of your VAR code
 except np.linalg.LinAlgError:
     print("SVD did not converge. Adjust the model or data preprocessing.")
+
+# Forecasting
+n_forecast = len(valid)  # Number of steps to forecast
+predicted = model_fit.forecast(train.values[-model_fit.k_ar:], steps=n_forecast)
+
+# Convert predictions to DataFrame
+predicted_df = pd.DataFrame(predicted, columns=train.columns)
+predicted_df.index = valid.index  # Align index with the valid dataset
+
+# Invert transformations for "Zone 1 Power Consumption"
+# ... [Invert transformations code specifically for 'Zone 1 Power Consumption'] ...
+
+
+# Plot the results for "Zone 1 Power Consumption"
+plt.figure(figsize=(10, 6))
+plt.plot(data['Zone 1 Power Consumption'], label='Actual')
+plt.plot(predicted_df['Zone 1 Power Consumption'], color='red', label='Predicted')
+plt.title('Prediction vs Actual for Zone 1 Power Consumption')
+plt.xlabel('Date')
+plt.ylabel('Zone 1 Power Consumption')
+plt.legend()
+plt.show()
