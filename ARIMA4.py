@@ -75,8 +75,8 @@ def visualize_power_usage_by_zone(consumption):
 def arima_model(plot_df, zone):
     # Fit ARIMA model
     train_df=plot_df.iloc[:-15000]
-    model = SARIMAX(train_df[f'PowerConsumption_{zone}'], order=(1,0,0), seasonal_order=(1,0,0,25))
-    fit = model.fit(disp=False)
+    model = SARIMAX(train_df[f'PowerConsumption_{zone}'], order=(1,0,0), seasonal_order=(1,0,0,144),approximate_diffuse=True)
+    fit = model.fit(disp=True)
 
     # Plot residual diagnostics
     fig = fit.plot_diagnostics(figsize=(15, 5))
