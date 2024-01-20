@@ -83,15 +83,20 @@ def arima_model(plot_df, zone):
     # plt.show()
 
     # Forecast
-    future = pd.DataFrame(index=pd.date_range(plot_df.index[-1] + pd.Timedelta(minutes=10), periods=3000, freq='10T'))
-    future['Temperature'] = 12
+    future = pd.DataFrame(index=pd.date_range(plot_df.index[-1] + pd.Timedelta(minutes=10), periods=30000, freq='10T'))
+    future['Temperature'] = [(12+(i/12000)) for i in range(0,30000)] #*(1+np.sin(i/72)) 
+    print(future['Temperature'])
+    # future['Humidity'] = [35*(2-np.sin(i)) for i in range(0,30000)]
+    # future['Windspeed'] = [0.05*(2-np.sin(i)) for i in range(0,30000)]
+    # future['GeneralDiffuseFlows'] = [0.05*(2-np.sin(i)) for i in range(0,30000)]
+    # future["DiffuseFlows"] = [0.1*(2-np.sin(i)) for i in range(0,30000)]
 
-    forecast = fit.get_forecast(steps=3000, exog=future)
+    forecast = fit.get_forecast(steps=30000, exog=future)
     forecast_df = forecast.summary_frame()
 
     # Calculate RMSE
     try:
-        actual_values_last_30 = plot_df[f'PowerConsumption_{zone}'].iloc[-3000:]
+        actual_values_last_30 = plot_df[f'PowerConsumption_{zone}'].iloc[-30000:]
         rmse_value_last_30 = rmse(forecast_df['mean'], actual_values_last_30)
         print(f'RMSE for {zone}: {rmse_value_last_30}')
     except ValueError:
