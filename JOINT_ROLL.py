@@ -81,7 +81,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
 target_variable = "Zone 1 Power Consumption"
-ts_data = data[target_variable]
+ts_data = df_scaled[target_variable]
 
 # Split the data into training and testing sets
 train_size = int(0.9 * len(ts_data))
@@ -107,12 +107,11 @@ forecast = fit_model.forecast(steps=n_forecast)
 
 # Plotting actual vs. predicted values
 fig, ax = plt.subplots(2,figsize=(12, 8))
-ax[0].plot(ts_data, label='Actual Data', color='blue')
-ax[0].plot(forecast, label='Forecasted Data', color='red', alpha=0.8)
-ax[0].set_title('Exponential Smoothing (Holt) Forecasting')
-ax[0].set_xlabel('Date')
-ax[0].set_ylabel(target_variable)
-ax[0].legend()
+ax[1].plot(ts_data, label='Actual Data', color='blue')
+ax[1].plot(forecast, label='Forecasted Data', color='red', alpha=0.8)
+ax[1].set_title('Exponential Smoothing (Holt) Forecasting')
+ax[1].set_xlabel('Date')
+ax[1].legend()
 
 # Set line width for both lines
 # ax[0].set_rcParams['lines.linewidth'] = 2
@@ -120,12 +119,12 @@ ax[0].legend()
 # Adjust y-axis limits to fit the data
 y_max = ts_data.max()
 y_min = ts_data.min()
-ax[0].set_ylim([y_min - 0.1 * y_max, y_max + 0.1 * y_max])
+ax[1].set_ylim([y_min - 0.1 * y_max, y_max + 0.1 * y_max])
 
 # Set x-axis limits to fit the data
 x_max = ts_data.index.max()
 x_min = ts_data.index.min()
-ax[0].set_xlim([x_min, x_max])
+ax[1].set_xlim([x_min, x_max])
 
 # Set grid line styling
 # ax[0].set_grid(linestyle='--', alpha=0.7)
@@ -163,13 +162,14 @@ print(f'Mean Absolute Percentage Error VAR (MAPE): {mape_VA}%')
 # Plot the results for "Zone 1 Power Consumption"
 # plt.figure(figsize=(10, 6))
 
-ax[1].plot(train_VA.index, train_VA[TARGET_VARIABLE], label='Train', color='blue')
-ax[1].plot(test_VA.index, test_VA[TARGET_VARIABLE], label='Test', color='orange')
-ax[1].plot(df_forecast.index, df_forecast[TARGET_VARIABLE], label='Forecast', color='green')
+ax[0].plot(train_VA.index, train_VA[TARGET_VARIABLE], label='Train', color='blue')
+ax[0].plot(test_VA.index, test_VA[TARGET_VARIABLE], label='Test', color='orange')
+ax[0].plot(df_forecast.index, df_forecast[TARGET_VARIABLE], label='Forecast', color='green')
 
-ax[1].set_xticklabels([])  # Hide x-axis labels
-ax[1].set_xlabel('Time')
-ax[1].set_ylabel('Power Consumption')
-ax[1].set_title('Vector AutoRegresion Forecasting')
-ax[1].legend()
+ax[0].set_xticklabels([])  # Hide x-axis labels
+font_properties = {'family': 'serif', 'color':  'blue', 'weight': 'normal', 'size': 20}
+fig.text(0.04, 0.5,'Power Consumption Mean', fontdict=font_properties, va='center', rotation='vertical')
+ax[0].set_title('Vector AutoRegresion Forecasting')
+ax[0].legend()
+
 plt.show()
