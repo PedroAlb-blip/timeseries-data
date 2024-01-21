@@ -4,10 +4,9 @@ import numpy as np
 import os
 from statsmodels.tsa.vector_ar.var_model import VAR
 from statsmodels.tsa.stattools import grangercausalitytests, adfuller
-
+from sklearn.preprocessing import StandardScaler
 
 TARGET_VARIABLE = "Zone 1 Power Consumption"
-N_PERIOD_TO_PREDICT = 35*140
 
 def check_stationarity(series, threshold=0.05):
     result = adfuller(series)
@@ -18,45 +17,19 @@ def check_stationarity(series, threshold=0.05):
 
 
 # Load your dataset
-data = pd.read_csv("Tetuan/Tetuan_City_power_consumption.csv", delimiter=',')
-#preProcessing(data)
 
-# Set 'DateTime' as index
-data['DateTime'] = pd.to_datetime(data['DateTime'])
+data = pd.read_csv("Tetuan/Tetuan_City_power_consumption.csv", delimiter=',')
+data.drop(['Zone 2 Power Consumption', 'Zone 3 Power Consumption'], axis=1, inplace=True)
+
+
+data['DateTime'] = pd.to_datetime(data['DateTime'], format='%m/%d/%Y %H:%M')
 data.set_index('DateTime', inplace=True)
 
-
-# Create the "dataplots" directory if it doesn't exist
 os.makedirs("dataplots", exist_ok=True)
 
-# List of columns to plot, excluding 'DateTime'
-columns_to_plot = [col for col in data.columns if col != 'DateTime'] #
-print(data.columns)
-seasonality = 143 * 7
-# Apply rolling mean and plot each column
-for col in columns_to_plot:
-#     # Ensure all values are positive before log transformation
-    min_value = data[col].min()
-    data[col] = data[col] + (-min_value + 1) if min_value <= 0 else data[col]
-
-    # Apply log transformation
-    data[col] = np.log(data[col])
-    # Apply differencing
-    data[col] = data[col].diff(seasonality)
-
-    # Apply rolling mean
-    data[col] = data[col].rolling(window=143).mean()
-
-    # Drop NaN values
-    data_to_plot = data[col].dropna()
-    plt.ylim(0, 100000)
-
-    # Plotting
-    data_to_plot.plot()
-    plt.savefig(f'dataplots/{col}_rolling_avg.png')
-    plt.close()
-
-
+data = data.resample('D').mean()
+#data = data.rolling(7).mean().dropna()
+scaler = StandardScaler()
 
 # Path to the directory where plots are saved
 print("Plots saved in the 'dataplots' directory.")
@@ -64,13 +37,14 @@ data.replace('', np.nan, inplace=True)
 data.dropna(inplace=True)
 data.to_csv("stationaryDataset.csv", index=False)
 
+scaled_data = scaler.fit_transform(data)
+df_scaled = pd.DataFrame(scaled_data, index=data.index, columns=data.columns)
 
 
 #APPLY VECTOR AUTO REGRESSION
-cols = data.columns
-train = data[:int(0.9*(len(data)))]
-valid = data[int(0.9*(len(data))):]
-
+test_VA_start_date = df_scaled.index[int(0.9 * len(df_scaled))]
+train_VA = df_scaled[df_scaled.index < test_VA_start_date]
+test_VA = df_scaled[df_scaled.index >= test_VA_start_date]
 #Check for stationarity
 #for col in columns_to_plot:
 #    print({col})
@@ -79,31 +53,24 @@ valid = data[int(0.9*(len(data))):]
 #        exit(4)
 
 # Adjusting the VAR model fitting
-'''
-model = VAR(train)
-for i in [1,2,3,4,5,6,7,8,9,10,20,30]:
-    result = model.fit(i)
-    print('Lag Order =', i)
-    print('AIC : ', result.aic)
-    print('BIC : ', result.bic)
-    print('FPE : ', result.fpe)
-    print('HQIC: ', result.hqic, '\n')
-'''
-#grangers_test(data, 9)
-try:
-    model = VAR(endog=train)
-    model_fit = model.fit(maxlags=5)  # You can adjust the number of lags
-    # Rest of your VAR code
-except np.linalg.LinAlgError:
-    print("SVD did not converge. Adjust the model or data preprocessing.")
 
-# Forecasting
-n_forecast = len(valid)  # Number of steps to forecast
-predicted = model_fit.forecast(train.values[-model_fit.k_ar:], steps=n_forecast)
+if train_VA.empty:
+    raise ValueError("Training data is empty after preprocessing.")
+
+for column in train_VA.columns:
+    if check_stationarity(train_VA[column]):
+        print(f"The variable {column} is stationary.")
+    else:
+        print(f"The variable {column} is not stationary and may need differencing or transformation.")
+
+#grangers_test(data, 9)
+model = VAR(train_VA)
+model_fit = model.fit(maxlags=14)  # Adjust the number of lags as needed
 
 # Convert predictions to DataFrame
-predicted_df = pd.DataFrame(predicted, columns=train.columns)
-predicted_df.index = valid.index  # Align index with the valid dataset
+n_forecast = len(test_VA)  # Number of steps to forecast
+forecast = model_fit.forecast(train_VA.values[-model_fit.k_ar:], steps=n_forecast)
+df_forecast = pd.DataFrame(forecast, index=test_VA.index, columns=df_scaled.columns)
 
 # Invert transformations for "Zone 1 Power Consumption"
 # ... [Invert transformations code specifically for 'Zone 1 Power Consumption'] ...
@@ -117,7 +84,7 @@ target_variable = "Zone 1 Power Consumption"
 ts_data = data[target_variable]
 
 # Split the data into training and testing sets
-train_size = int(len(ts_data) - N_PERIOD_TO_PREDICT)
+train_size = int(0.9 * len(ts_data))
 train, test = ts_data[:train_size], ts_data[train_size:]
 
 # Check for stationarity
@@ -129,14 +96,17 @@ def check_stationarity(series, threshold=0.05):
     print(f"The time series is not stationary (p-value: {result[1]:.4f})")
 
 # Apply Exponential Smoothing (Holt) model
-model = ExponentialSmoothing(train, seasonal='add', seasonal_periods=143*7)
+print(train_size)
+print(train)
+print(train_VA)
+model = ExponentialSmoothing(train, seasonal='add', seasonal_periods=7)
 fit_model = model.fit()
 
 # Forecast future values
-forecast = fit_model.forecast(steps=N_PERIOD_TO_PREDICT)
+forecast = fit_model.forecast(steps=n_forecast)
 
 # Plotting actual vs. predicted values
-fig, ax = plt.subplots(2,figsize=(10, 6))
+fig, ax = plt.subplots(2,figsize=(12, 8))
 ax[0].plot(ts_data, label='Actual Data', color='blue')
 ax[0].plot(forecast, label='Forecasted Data', color='red', alpha=0.8)
 ax[0].set_title('Exponential Smoothing (Holt) Forecasting')
@@ -169,30 +139,37 @@ check_stationarity(test)
 
 # Mean Absolute Error (MAE)
 mae = mean_absolute_error(test, forecast)
-print(f'Mean Absolute Error (MAE): {mae}')
-
+print(f'Mean Absolute Error ES (MAE): {mae}')
+mae_VAR = mean_absolute_error(test_VA, df_forecast)
+print(f'Mean Absolute Error VAR (MAE): {mae_VAR}')
 # Mean Squared Error (MSE)
 mse = mean_squared_error(test, forecast)
-print(f'Mean Squared Error (MSE): {mse}')
-
+print(f'Mean Squared Error ES (MSE): {mse}')
+mse_VAR = mean_squared_error(test_VA, df_forecast)
+print(f'Mean Squared Error VAR (MSE): {mse_VAR}')
 # Root Mean Squared Error (RMSE)
 rmse = np.sqrt(mse)
-print(f'Root Mean Squared Error (RMSE): {rmse}')
-
+print(f'Root Mean Squared Error ES (RMSE): {rmse}')
+rmse_VAR = np.sqrt(mse_VAR)
+print(f'Root Mean Squared Error VAR (RMSE): {rmse_VAR}')
 # Mean Absolute Percentage Error (MAPE)
 def mean_absolute_percentage_error(y_true, y_pred): 
   return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
 mape = mean_absolute_percentage_error(test, forecast)
-print(f'Mean Absolute Percentage Error (MAPE): {mape}%')
-
+print(f'Mean Absolute Percentage Error ES (MAPE): {mape}%')
+mape_VA = mean_absolute_percentage_error(test_VA, df_forecast)
+print(f'Mean Absolute Percentage Error VAR (MAPE): {mape_VA}%')
 # Plot the results for "Zone 1 Power Consumption"
 # plt.figure(figsize=(10, 6))
-ax[1].plot(data['Zone 1 Power Consumption'], label='Actual')
 
-ax[1].plot(predicted_df['Zone 1 Power Consumption'], color='red', label='Predicted')
-ax[1].set_title('Prediction vs Actual for Zone 1 Power Consumption')
-ax[1].set_xlabel('Date')
-ax[1].set_ylabel('Zone 1 Power Consumption')
+ax[1].plot(train_VA.index, train_VA[TARGET_VARIABLE], label='Train', color='blue')
+ax[1].plot(test_VA.index, test_VA[TARGET_VARIABLE], label='Test', color='orange')
+ax[1].plot(df_forecast.index, df_forecast[TARGET_VARIABLE], label='Forecast', color='green')
+
+ax[1].set_xticklabels([])  # Hide x-axis labels
+ax[1].set_xlabel('Time')
+ax[1].set_ylabel('Power Consumption')
+ax[1].set_title('Vector AutoRegresion Forecasting')
 ax[1].legend()
 plt.show()
