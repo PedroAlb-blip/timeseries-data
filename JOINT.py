@@ -34,27 +34,27 @@ columns_to_plot = [col for col in data.columns if col != 'DateTime'] #
 print(data.columns)
 seasonality = 143 * 7
 # Apply rolling mean and plot each column
-# for col in columns_to_plot:
+for col in columns_to_plot:
 #     # Ensure all values are positive before log transformation
-#     min_value = data[col].min()
-#     data[col] = data[col] + (-min_value + 1) if min_value <= 0 else data[col]
+    min_value = data[col].min()
+    data[col] = data[col] + (-min_value + 1) if min_value <= 0 else data[col]
 
-#     # Apply log transformation
-#     data[col] = np.log(data[col])
-#     # Apply differencing
-#     data[col] = data[col].diff(seasonality)
+    # Apply log transformation
+    data[col] = np.log(data[col])
+    # Apply differencing
+    data[col] = data[col].diff(seasonality)
 
-#     # Apply rolling mean
-#     data[col] = data[col].rolling(window=143).mean()
+    # Apply rolling mean
+    data[col] = data[col].rolling(window=143).mean()
 
-#     # Drop NaN values
-#     data_to_plot = data[col].dropna()
-#     plt.ylim(0, 100000)
+    # Drop NaN values
+    data_to_plot = data[col].dropna()
+    plt.ylim(0, 100000)
 
-#     # Plotting
-#     data_to_plot.plot()
-#     plt.savefig(f'dataplots/{col}_rolling_avg.png')
-#     plt.close()
+    # Plotting
+    data_to_plot.plot()
+    plt.savefig(f'dataplots/{col}_rolling_avg.png')
+    plt.close()
 
 
 
@@ -108,12 +108,9 @@ predicted_df.index = valid.index  # Align index with the valid dataset
 # Invert transformations for "Zone 1 Power Consumption"
 # ... [Invert transformations code specifically for 'Zone 1 Power Consumption'] ...
 
-import pandas as pd
-import matplotlib.pyplot as plt
+
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
-import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from statsmodels.tsa.stattools import adfuller
 
 # Load your dataset
 data = pd.read_csv(r'Tetuan\Tetuan_City_power_consumption.csv', delimiter=',')
