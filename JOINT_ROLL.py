@@ -190,7 +190,7 @@ print(f'Mean Absolute Percentage Error (MAPE): {mape}%')
 # plt.figure(figsize=(10, 6))
 ax[1].plot(data['Zone 1 Power Consumption'], label='Actual')
 
-ax[1].plot(pd.to_datetime(predicted_df['Zone 1 Power Consumption']), color='red', label='Predicted')
+ax[1].plot(predicted_df['Zone 1 Power Consumption'], color='red', label='Predicted')
 ax[1].set_title('Prediction vs Actual for Zone 1 Power Consumption')
 ax[1].set_xlabel('Date')
 ax[1].set_ylabel('Zone 1 Power Consumption')
