@@ -5,6 +5,8 @@ import os
 from statsmodels.tsa.vector_ar.var_model import VAR
 from statsmodels.tsa.stattools import grangercausalitytests, adfuller
 from sklearn.preprocessing import StandardScaler
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 TARGET_VARIABLE = "Zone 1 Power Consumption"
 
@@ -16,8 +18,7 @@ def check_stationarity(series, threshold=0.05):
         return False
 
 
-# Load your dataset
-
+# LoadDataset
 data = pd.read_csv("Tetuan/Tetuan_City_power_consumption.csv", delimiter=',')
 data.drop(['Zone 2 Power Consumption', 'Zone 3 Power Consumption'], axis=1, inplace=True)
 
@@ -27,8 +28,8 @@ data.set_index('DateTime', inplace=True)
 
 os.makedirs("dataplots", exist_ok=True)
 
+#Sample the dataset on a dayli mean.
 data = data.resample('D').mean()
-#data = data.rolling(7).mean().dropna()
 scaler = StandardScaler()
 
 # Path to the directory where plots are saved
@@ -37,14 +38,16 @@ data.replace('', np.nan, inplace=True)
 data.dropna(inplace=True)
 data.to_csv("stationaryDataset.csv", index=False)
 
+#apply scaler transformation to make it stationary
 scaled_data = scaler.fit_transform(data)
 df_scaled = pd.DataFrame(scaled_data, index=data.index, columns=data.columns)
 
 
-#APPLY VECTOR AUTO REGRESSION
+#First approach: VAR
 test_VA_start_date = df_scaled.index[int(0.9 * len(df_scaled))]
 train_VA = df_scaled[df_scaled.index < test_VA_start_date]
 test_VA = df_scaled[df_scaled.index >= test_VA_start_date]
+
 #Check for stationarity
 #for col in columns_to_plot:
 #    print({col})
@@ -52,7 +55,6 @@ test_VA = df_scaled[df_scaled.index >= test_VA_start_date]
 #        print(f"Series {col} is not stationary")
 #        exit(4)
 
-# Adjusting the VAR model fitting
 
 if train_VA.empty:
     raise ValueError("Training data is empty after preprocessing.")
@@ -71,13 +73,6 @@ model_fit = model.fit(maxlags=14)  # Adjust the number of lags as needed
 n_forecast = len(test_VA)  # Number of steps to forecast
 forecast = model_fit.forecast(train_VA.values[-model_fit.k_ar:], steps=n_forecast)
 df_forecast = pd.DataFrame(forecast, index=test_VA.index, columns=df_scaled.columns)
-
-# Invert transformations for "Zone 1 Power Consumption"
-# ... [Invert transformations code specifically for 'Zone 1 Power Consumption'] ...
-
-
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
 target_variable = "Zone 1 Power Consumption"
